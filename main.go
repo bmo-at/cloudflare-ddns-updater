@@ -68,7 +68,7 @@ func (c *CloudflareDDNSUpdaterApplication) configure() {
 			c.logger.Errorf("custom duration between updates '%s' could not be parsed: '%s'\n", duration_string, err.Error())
 			c.exit()
 		}
-		c.logger.Infof("custom duration betwwen updates was specified as '%s', using %s", duration_string, duration.String())
+		c.logger.Infof("custom duration betwwen updates was specified as '%s', using %s\n", duration_string, duration.String())
 		c.sleep_interval = duration
 	} else {
 		c.sleep_interval = 5 * time.Minute
