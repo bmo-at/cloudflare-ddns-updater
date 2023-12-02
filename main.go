@@ -120,6 +120,8 @@ func (c *CloudflareDDNSUpdaterApplication) update(ctx context.Context) {
 		c.exit()
 	}
 
+	c.logger.Infof("current IP address is %s\n", current_ip.String())
+
 	zones, err := c.api.ListZones(ctx, c.zone_name)
 
 	if err != nil {
@@ -149,8 +151,11 @@ func (c *CloudflareDDNSUpdaterApplication) update(ctx context.Context) {
 		c.exit()
 	}
 
+	c.logger.Infof("current content of '%s' in zone '%s' is %s\n", c.record_name, c.zone_name, records[len(records)-1].Content)
+
 	if records[len(records)-1].Content != current_ip.String() {
-		_, err := c.api.UpdateDNSRecord(ctx, rc, cloudflare.UpdateDNSRecordParams{
+		c.logger.Infof("record is not up-to-date, updating...\n")
+		updated_record, err := c.api.UpdateDNSRecord(ctx, rc, cloudflare.UpdateDNSRecordParams{
 			ID:      records[len(records)-1].ID,
 			Content: current_ip.String(),
 		})
@@ -159,7 +164,12 @@ func (c *CloudflareDDNSUpdaterApplication) update(ctx context.Context) {
 			c.logger.Errorf("could not update record '%s' in zone '%s': %s\n", c.record_name, c.zone_name, err)
 			c.exit()
 		}
+		c.logger.Infof("record has been successfully updated: %+v\n", updated_record, c.sleep_interval.String())
+
+	} else {
+		c.logger.Infof("record is already up-to-date @ %s\n", time.Now().String())
 	}
+
 	c.logger.Infof("CLOUDFLARE DDNS update finished " + strings.Repeat("-", 18) + "\n")
 }
 
