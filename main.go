@@ -16,17 +16,20 @@ const (
 	API_TOKEN_ENV_VARIABLE_NAME = "CLOUDFLARE_API_TOKEN"
 	ZONE_ENV_VARIABLE_NAME      = "CLOUDFLARE_ZONE_NAME"
 	RECORD_ENV_VARIABLE_NAME    = "CLOUDFLARE_RECORD_NAME"
+	CURRNENT_IP_INFO_ENDPOINT   = "CURRENT_IP_INFO_ENDPOINT"
+	DURATION_BETWEEN_UPDATES    = "DURATION_BETWEEN_UPDATES"
 )
 
 type CloudflareDDNSUpdaterApplication struct {
-	api_token   string
-	ip_info_url string
-	zone_name   string
-	record_name string
-	context     context.Context
-	cancel      context.CancelFunc
-	logger      *cloudflare.LeveledLogger
-	api         *cloudflare.API
+	api_token      string
+	ip_info_url    string
+	zone_name      string
+	record_name    string
+	sleep_interval time.Duration
+	context        context.Context
+	cancel         context.CancelFunc
+	logger         *cloudflare.LeveledLogger
+	api            *cloudflare.API
 }
 
 func (c *CloudflareDDNSUpdaterApplication) configure() {
@@ -53,10 +56,22 @@ func (c *CloudflareDDNSUpdaterApplication) configure() {
 		c.exit()
 	}
 
-	if custom_ip_info_url, exists := os.LookupEnv("CURRENT_IP_INFO_ENDPOINT"); exists {
+	if custom_ip_info_url, exists := os.LookupEnv(CURRNENT_IP_INFO_ENDPOINT); exists {
 		c.ip_info_url = custom_ip_info_url
 	} else {
 		c.ip_info_url = "https://ipinfo.io/ip"
+	}
+
+	if duration_string, exists := os.LookupEnv(DURATION_BETWEEN_UPDATES); exists {
+		duration, err := time.ParseDuration(duration_string)
+		if err != nil {
+			c.logger.Errorf("custom duration between updates '%s' could not be parsed: '%s'\n", duration_string, err.Error())
+			c.exit()
+		}
+		c.logger.Infof("custom duration betwwen updates was specified as '%s', using %s", duration_string, duration.String())
+		c.sleep_interval = duration
+	} else {
+		c.sleep_interval = 5 * time.Minute
 	}
 
 	c.logger.Infof("CLOUDFLARE DDNS configuration finished " + strings.Repeat("-", 11) + "\n")
@@ -154,7 +169,7 @@ func (c *CloudflareDDNSUpdaterApplication) run() {
 	c.cancel = cancel
 	for {
 		go c.update(c.context)
-		time.Sleep(5 * time.Minute)
+		time.Sleep(c.sleep_interval)
 	}
 }
 
