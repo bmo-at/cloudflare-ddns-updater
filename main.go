@@ -59,7 +59,7 @@ func (c *CloudflareDDNSUpdaterApplication) configure() {
 	if custom_ip_info_url, exists := os.LookupEnv(CURRNENT_IP_INFO_ENDPOINT); exists {
 		c.ip_info_url = custom_ip_info_url
 	} else {
-		c.ip_info_url = "https://ipinfo.io/ip"
+		c.ip_info_url = "https://icanhazip.com"
 	}
 
 	if duration_string, exists := os.LookupEnv(DURATION_BETWEEN_UPDATES); exists {
