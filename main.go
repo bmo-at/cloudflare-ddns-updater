@@ -113,7 +113,7 @@ func (c *CloudflareDDNSUpdaterApplication) update(ctx context.Context) {
 		c.exit()
 	}
 
-	current_ip := net.ParseIP(string(ip_bytes))
+	current_ip := net.ParseIP(strings.TrimSpace(string(ip_bytes)))
 
 	if current_ip == nil {
 		c.logger.Errorf("current IP address could not be parsed from '%s'\n", string(ip_bytes))
